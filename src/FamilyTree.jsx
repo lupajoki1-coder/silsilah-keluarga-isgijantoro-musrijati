@@ -76,10 +76,6 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
   const [referenceMemberId, setReferenceMemberId] = useState('');
   const [relationType, setRelationType] = useState('Anak'); // Suami, Istri, Anak, Ayah, Ibu, Saudara
   const [newNote, setNewNote] = useState('');
-
-  const canEditPhoto = isSuperAdmin || isAdmin;
-  const canDelete = isSuperAdmin;
-
   // Derived flat list of members for dropdown
   const allMembers = treeData.flatMap((gen, genIndex) => gen.members.map(m => ({ ...m, genIndex })));
 
