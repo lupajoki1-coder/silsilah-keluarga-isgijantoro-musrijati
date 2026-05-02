@@ -190,7 +190,8 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
       gender: newGender,
       customAvatar: newCustomAvatar.trim(),
       avatarUrl: finalAvatarUrl,
-      note: newNote
+      note: newNote,
+      referenceMemberId: referenceMemberId ? referenceMemberId.toString() : ''
     };
 
     let updatedTree = treeData.map(gen => ({
@@ -352,11 +353,22 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
                           gen.members.forEach(member => {
                             if (processedIds.has(member.id)) return;
                             
-                            const spouse = gen.members.find(m => 
-                              !processedIds.has(m.id) && 
-                              (((m.relation === 'Suami' || m.relation === 'Istri') && m.referenceMemberId === member.id.toString()) ||
-                              ((member.relation === 'Suami' || member.relation === 'Istri') && member.referenceMemberId === m.id.toString()))
-                            );
+                            const spouse = gen.members.find(m => {
+                              if (processedIds.has(m.id)) return false;
+                              
+                              // Deteksi akurat menggunakan referenceMemberId
+                              const isExplicitMatch = 
+                                ((m.relation === 'Suami' || m.relation === 'Istri') && m.referenceMemberId === member.id.toString()) ||
+                                ((member.relation === 'Suami' || member.relation === 'Istri') && member.referenceMemberId === m.id.toString());
+                                
+                              // Deteksi mundur (legacy) untuk data lama yang belum punya referenceMemberId
+                              const isLegacyMatch = 
+                                (!m.referenceMemberId && !member.referenceMemberId) && 
+                                (((m.relation === 'Suami' || m.relation === 'Istri') && (member.relation !== 'Suami' && member.relation !== 'Istri')) ||
+                                ((member.relation === 'Suami' || member.relation === 'Istri') && (m.relation !== 'Suami' && m.relation !== 'Istri')));
+
+                              return isExplicitMatch || isLegacyMatch;
+                            });
 
                             if (spouse) {
                               grouped.push({ type: 'couple', members: [member, spouse] });
