@@ -69,3 +69,36 @@ export const validateFamilyAddition = async (newName, gender, relation, referenc
     return { valid: true, message: "" }; 
   }
 };
+
+export const generateFamilyStory = async (treeData) => {
+  if (!ai) {
+    return "Maaf, fitur cerita keluarga AI memerlukan API Key Gemini yang aktif. Pasang API Key Anda di file .env untuk memulai petualangan kisah keluarga ini!";
+  }
+
+  const prompt = `
+  Anda adalah "Sejarawan Digital Keluarga". Tugas Anda adalah merangkai sebuah narasi yang sangat hangat, puitis, dan menyentuh hati berdasarkan data silsilah keluarga berikut:
+  
+  DATA SILSILAH:
+  ${JSON.stringify(treeData)}
+  
+  INSTRUKSI:
+  1. Tuliskan sebuah ringkasan kisah yang "manusiawi" tentang perjalanan keturunan ini.
+  2. Fokus pada bagaimana setiap generasi saling terhubung dan harapan untuk masa depan.
+  3. Gunakan bahasa Indonesia yang sangat indah, sopan, dan puitis (Sastra).
+  4. Jangan terlalu panjang, maksimal 3-4 paragraf.
+  5. Jika ada banyak nama yang sudah meninggal (RIP), berikan penghormatan singkat atas warisan mereka.
+  
+  Tuliskan ceritanya sekarang:
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Gemini Story Error:", error);
+    return "Terjadi kesalahan saat merangkai kisah. Mohon coba lagi nanti.";
+  }
+};
