@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { syncTreeToDB, getTreeFromDB, isDemoMode } from './firebase';
 import html2canvas from 'html2canvas';
-import { validateFamilyAddition } from './gemini';
+import { validateFamilyAddition, generateFamilyStory } from './gemini';
 import { TransformWrapper, TransformComponent, useControls } from "react-zoom-pan-pinch";
 import { addLog } from './logger';
 
@@ -76,6 +76,21 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
   const [referenceMemberId, setReferenceMemberId] = useState('');
   const [relationType, setRelationType] = useState('Anak'); // Suami, Istri, Anak, Ayah, Ibu, Saudara
   const [newNote, setNewNote] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isAiStoryLoading, setIsAiStoryLoading] = useState(false);
+  const [aiStory, setAiStory] = useState('');
+
+  const handleGenerateStory = async () => {
+    setIsAiStoryLoading(true);
+    try {
+      const story = await generateFamilyStory(treeData);
+      setAiStory(story);
+    } catch (error) {
+      console.error("Gagal membuat cerita:", error);
+    } finally {
+      setIsAiStoryLoading(false);
+    }
+  };
   // Derived flat list of members for dropdown
   const allMembers = treeData.flatMap((gen, genIndex) => gen.members.map(m => ({ ...m, genIndex })));
 
@@ -313,6 +328,21 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
 
   return (
     <div className="family-tree-container" style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden', background: 'var(--color-background)' }}>
+      {/* Global Search Bar */}
+      <div className="search-container hide-on-mobile-flex">
+        <svg className="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input 
+          type="text" 
+          className="search-input" 
+          placeholder="Cari anggota keluarga..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
       <div style={{ width: '100%', height: '100%', position: 'relative' }}>
         <TransformWrapper
           initialScale={1}
@@ -392,7 +422,7 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
                                 </button>
                               )}
                               <div 
-                                className={`member-card ${focusedMemberId === member.id ? 'focused' : ''}`}
+                                className={`member-card ${focusedMemberId === member.id ? 'focused' : ''} ${searchTerm && member.name.toLowerCase().includes(searchTerm.toLowerCase()) ? 'search-match' : ''}`}
                                 onClick={() => setFocusedMemberId(member.id)}
                                 style={{ 
                                   cursor: 'pointer', 
@@ -403,16 +433,10 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
                                 title="Klik untuk melihat garis keturunan"
                               >
                                 {member.note && (
-                                  <div className="member-note-tooltip" style={{
-                                    position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', 
-                                    background: 'rgba(0,0,0,0.85)', color: 'white', padding: '0.6rem 0.8rem', 
-                                    borderRadius: '6px', fontSize: '0.75rem', width: 'max-content', maxWidth: '200px', 
-                                    zIndex: 100, textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                                    marginTop: '8px', lineHeight: 1.4, pointerEvents: 'none'
-                                  }}>
+                                  <div className="member-note-tooltip">
                                     <div style={{ fontWeight: 'bold', marginBottom: '2px', color: 'var(--color-primary)' }}>Catatan:</div>
                                     {member.note}
-                                    <div style={{ position: 'absolute', top: '-4px', left: '50%', transform: 'translateX(-50%)', width: '0', height: '0', borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '5px solid rgba(0,0,0,0.85)' }}></div>
+                                    <div className="arrow" style={{ position: 'absolute', top: '-4px', left: '50%', transform: 'translateX(-50%)', width: '0', height: '0', borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '5px solid rgba(0,0,0,0.85)' }}></div>
                                   </div>
                                 )}
                                 <div 
@@ -422,7 +446,11 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
                                   {member.status === "Meninggal" && <div className="status-badge rip">RIP</div>}
                                 </div>
                                 <div className="member-info">
-                                  <h4 className="member-name">{member.name} <span style={{ color: member.gender === 'Perempuan' ? '#EC4899' : '#3B82F6' }}>{member.gender === 'Perempuan' ? '♀' : '♂'}</span></h4>
+                                  <h4 className="member-name">
+                                    {member.name} 
+                                    {!isGuest && <span style={{ color: member.gender === 'Perempuan' ? '#EC4899' : '#3B82F6' }}> {member.gender === 'Perempuan' ? '♀' : '♂'}</span>}
+                                  </h4>
+                                  {isGuest && <small style={{ fontSize: '0.65rem', color: '#999', display: 'block', marginTop: '2px' }}>🔒 Detail Terkunci</small>}
                                 </div>
                               </div>
                             </div>
@@ -482,7 +510,19 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
           </svg>
           Cetak Silsilah (JPG)
         </button>
+        <button className="btn-primary" onClick={handleGenerateStory} style={{ background: 'linear-gradient(135deg, #6366F1, #A855F7)', color: 'white', border: 'none' }} disabled={isAiStoryLoading}>
+          {isAiStoryLoading ? '🤖 Menulis...' : '📖 Kisah Keluarga (AI)'}
+        </button>
       </div>
+      
+      {isGuest && (
+        <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 10, width: '90%', maxWidth: '400px' }}>
+          <div className="guest-cta" onClick={() => document.querySelector('button.btn-primary').click()}>
+            ✨ Ingin melihat detail hubungan & riwayat lengkap?
+            <div style={{ fontSize: '0.7rem', fontWeight: 400, marginTop: '4px' }}>Minta akses ke anggota keluarga pengelola untuk login.</div>
+          </div>
+        </div>
+      )}
 
       {/* Modal / Pop-up Form */}
       {isModalOpen && (
@@ -626,6 +666,23 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
                 )}
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Modal Kisah Keluarga AI */}
+      {aiStory && (
+        <div className="modal-overlay" style={{ zIndex: 300 }}>
+          <div className="modal-content" style={{ maxWidth: '600px', background: '#F8FAFC' }}>
+            <div className="modal-header">
+              <h3>📖 Untaian Kisah Keluarga</h3>
+              <button className="close-btn" onClick={() => setAiStory('')}>&times;</button>
+            </div>
+            <div style={{ padding: '1.5rem', lineHeight: 1.8, fontSize: '1rem', color: '#334155', whiteSpace: 'pre-wrap', maxHeight: '60vh', overflowY: 'auto', fontFamily: 'serif' }}>
+              {aiStory}
+            </div>
+            <div style={{ textAlign: 'center', padding: '1rem', borderTop: '1px solid #E2E8F0', color: '#64748B', fontSize: '0.8rem' }}>
+              Darasiratkan oleh Gemini AI • Menghubungkan masa lalu ke masa depan.
+            </div>
           </div>
         </div>
       )}
