@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
-import { getAccountsFromDB, syncAccountsToDB } from './firebase';
+import { getAccountsFromDB, syncAccountsToDB, logActivity } from './firebase';
 import FamilyTree from './FamilyTree';
 import { addLog, downloadLogs } from './logger';
 
@@ -45,6 +45,7 @@ function App() {
       setLoginUsername('');
       setLoginPassword('');
       addLog('info', 'Autentikasi', `Super-Admin irincahyo berhasil login.`);
+      logActivity('LOGIN_SUCCESS', 'Super-Admin irincahyo masuk ke sistem.', 'irincahyo');
       return;
     }
 
@@ -56,8 +57,10 @@ function App() {
       setLoginUsername('');
       setLoginPassword('');
       addLog('info', 'Autentikasi', `Pengguna ${loginUsername} berhasil login sebagai ${acc.role}.`);
+      logActivity('LOGIN_SUCCESS', `Pengguna ${loginUsername} masuk sebagai ${acc.role}.`, loginUsername);
     } else {
       addLog('error', 'Autentikasi Gagal', `Percobaan login gagal untuk username: ${loginUsername}`);
+      logActivity('LOGIN_FAILED', `Gagal login untuk username: ${loginUsername}`, "Unknown");
       alert("Username atau password salah!");
     }
   };
