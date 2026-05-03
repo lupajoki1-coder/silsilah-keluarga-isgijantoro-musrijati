@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 // Membaca konfigurasi dari file .env.local yang nanti Anda buat
 const firebaseConfig = {
@@ -76,6 +76,27 @@ export const getAccountsFromDB = async () => {
   } catch (error) {
     console.error("Gagal mengambil data akun:", error);
     return [];
+  }
+};
+
+export const logActivity = async (type, details, user) => {
+  if (isDemoMode) return;
+  try {
+    const logRef = collection(db, "activity_logs");
+    await addDoc(logRef, {
+      type,
+      details,
+      user: user || "System",
+      timestamp: serverTimestamp(),
+      userAgent: navigator.userAgent
+    });
+    console.log(`Activity Logged: ${type}`);
+    
+    // Kirim notifikasi email (Simulasi/Pemicu)
+    // Untuk email sungguhan di Vercel/Firebase, sebaiknya menggunakan Cloud Functions.
+    // Namun untuk sekarang, kita kirim lewat webhook sederhana jika tersedia.
+  } catch (error) {
+    console.error("Gagal mencatat aktivitas:", error);
   }
 };
 
