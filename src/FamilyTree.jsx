@@ -274,6 +274,21 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
     }
   };
 
+  const handleShareLink = () => {
+    const shareData = {
+      title: 'Silsilah Keluarga Isgijantoro',
+      text: 'Mari melihat silsilah keluarga Isgijantoro secara interaktif.',
+      url: window.location.href
+    };
+
+    if (navigator.share) {
+      navigator.share(shareData).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Tautan silsilah telah disalin ke papan klip!');
+    }
+  };
+
   const handleExportData = () => {
     const dataStr = JSON.stringify(treeData, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -496,15 +511,17 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
           </svg>
           Cetak Silsilah (JPG)
         </button>
+        <button className="btn-secondary" onClick={handleShareLink} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--color-white)', color: 'var(--color-primary)', borderColor: 'var(--color-primary)' }}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+            <polyline points="16 6 12 2 8 6"></polyline>
+            <line x1="12" y1="2" x2="12" y2="15"></line>
+          </svg>
+          Bagikan
+        </button>
       </div>
       
-      {isGuest && (
-        <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 10, width: '90%', maxWidth: '350px' }}>
-          <div className="guest-cta" onClick={() => document.querySelector('button.btn-primary').click()}>
-            Minta akses ke anggota keluarga pengelola untuk login
-          </div>
-        </div>
-      )}
+
 
       {/* Modal / Pop-up Form */}
       {isModalOpen && (
