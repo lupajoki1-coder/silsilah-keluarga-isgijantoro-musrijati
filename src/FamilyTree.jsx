@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { syncTreeToDB, getTreeFromDB, isDemoMode } from './firebase';
 import html2canvas from 'html2canvas';
-import { validateFamilyAddition, generateFamilyStory } from './gemini';
+import { validateFamilyAddition } from './gemini';
 import { TransformWrapper, TransformComponent, useControls } from "react-zoom-pan-pinch";
 import { addLog } from './logger';
 
@@ -77,20 +77,6 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
   const [relationType, setRelationType] = useState('Anak'); // Suami, Istri, Anak, Ayah, Ibu, Saudara
   const [newNote, setNewNote] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAiStoryLoading, setIsAiStoryLoading] = useState(false);
-  const [aiStory, setAiStory] = useState('');
-
-  const handleGenerateStory = async () => {
-    setIsAiStoryLoading(true);
-    try {
-      const story = await generateFamilyStory(treeData);
-      setAiStory(story);
-    } catch (error) {
-      console.error("Gagal membuat cerita:", error);
-    } finally {
-      setIsAiStoryLoading(false);
-    }
-  };
   // Derived flat list of members for dropdown
   const allMembers = treeData.flatMap((gen, genIndex) => gen.members.map(m => ({ ...m, genIndex })));
 
@@ -510,16 +496,12 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
           </svg>
           Cetak Silsilah (JPG)
         </button>
-        <button className="btn-primary" onClick={handleGenerateStory} style={{ background: 'linear-gradient(135deg, #6366F1, #A855F7)', color: 'white', border: 'none' }} disabled={isAiStoryLoading}>
-          {isAiStoryLoading ? '🤖 Menulis...' : '📖 Kisah Keluarga (AI)'}
-        </button>
       </div>
       
       {isGuest && (
-        <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 10, width: '90%', maxWidth: '400px' }}>
+        <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 10, width: '90%', maxWidth: '350px' }}>
           <div className="guest-cta" onClick={() => document.querySelector('button.btn-primary').click()}>
-            ✨ Ingin melihat detail hubungan & riwayat lengkap?
-            <div style={{ fontSize: '0.7rem', fontWeight: 400, marginTop: '4px' }}>Minta akses ke anggota keluarga pengelola untuk login.</div>
+            Minta akses ke anggota keluarga pengelola untuk login
           </div>
         </div>
       )}
@@ -535,7 +517,6 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
             
             {aiError && (
               <div style={{ padding: '1rem', background: '#FEF2F2', borderLeft: '4px solid #EF4444', marginBottom: '1rem', borderRadius: '4px', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '1.2rem' }}>🤖</span>
                 <p style={{ margin: 0, color: '#991B1B', fontSize: '0.9rem', lineHeight: 1.4 }}>{aiError}</p>
               </div>
             )}
@@ -644,7 +625,7 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
               
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                 <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={isAiLoading}>
-                  {isAiLoading ? '🤖 Memvalidasi...' : (editingMember ? 'Simpan Perubahan' : 'Simpan Anggota')}
+                  {isAiLoading ? 'Memvalidasi...' : (editingMember ? 'Simpan Perubahan' : 'Simpan Anggota')}
                 </button>
                 {(editingMember && canDelete) && (
                   <button 
@@ -666,23 +647,6 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
                 )}
               </div>
             </form>
-          </div>
-        </div>
-      )}
-      {/* Modal Kisah Keluarga AI */}
-      {aiStory && (
-        <div className="modal-overlay" style={{ zIndex: 300 }}>
-          <div className="modal-content" style={{ maxWidth: '600px', background: '#F8FAFC' }}>
-            <div className="modal-header">
-              <h3>📖 Untaian Kisah Keluarga</h3>
-              <button className="close-btn" onClick={() => setAiStory('')}>&times;</button>
-            </div>
-            <div style={{ padding: '1.5rem', lineHeight: 1.8, fontSize: '1rem', color: '#334155', whiteSpace: 'pre-wrap', maxHeight: '60vh', overflowY: 'auto', fontFamily: 'serif' }}>
-              {aiStory}
-            </div>
-            <div style={{ textAlign: 'center', padding: '1rem', borderTop: '1px solid #E2E8F0', color: '#64748B', fontSize: '0.8rem' }}>
-              Darasiratkan oleh Gemini AI • Menghubungkan masa lalu ke masa depan.
-            </div>
           </div>
         </div>
       )}
