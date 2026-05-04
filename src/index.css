@@ -620,13 +620,20 @@ p {
 /* --- GLOBAL SEARCH BAR --- */
 .search-container {
   position: fixed;
-  top: 15px;
+  top: 70px; /* Move down on mobile to clear top identity/login */
   left: 50%;
   transform: translateX(-50%);
   z-index: 60;
-  width: 300px;
-  max-width: 80vw;
+  width: 280px;
+  max-width: 90vw;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+  .search-container {
+    top: 15px; /* Back to top on desktop */
+    width: 300px;
+  }
 }
 
 .search-input {
@@ -701,9 +708,47 @@ p {
   text-decoration: none;
 }
 
-.member-card.search-match {
-  border-color: #FACC15 !important;
-  box-shadow: 0 0 15px rgba(250, 204, 21, 0.5) !important;
-  transform: scale(1.1) !important;
+.mini-share-btn {
+  position: fixed;
+  bottom: 1rem;
+  right: 4.5rem; /* Next to zoom controls */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.mini-share-btn:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .action-row {
+    flex-wrap: wrap;
+    justify-content: center;
+    bottom: 10px;
+    width: calc(100% - 30px);
+  }
+  
+  .mini-share-btn {
+    bottom: 4.5rem; /* Stack above zoom on mobile if needed, or keep next to it */
+    right: 1rem;
+  }
+  
+  .zoom-controls-container {
+    bottom: 1rem !important;
+    right: 1rem !important;
+  }
 }
 
