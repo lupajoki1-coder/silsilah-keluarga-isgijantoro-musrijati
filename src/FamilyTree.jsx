@@ -9,7 +9,7 @@ import { addLog } from './logger';
 const ZoomControls = () => {
   const { zoomIn, zoomOut, resetTransform } = useControls();
   return (
-    <div style={{ position: 'absolute', bottom: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 10 }}>
+    <div className="zoom-controls-container" style={{ position: 'absolute', bottom: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 10 }}>
       <button onClick={() => zoomIn(0.2)} style={{ width: '40px', height: '40px', borderRadius: '50%', border: 'none', background: 'var(--color-primary)', color: 'white', fontSize: '1.2rem', boxShadow: 'var(--shadow-md)', cursor: 'pointer' }}>➕</button>
       <button onClick={() => zoomOut(0.2)} style={{ width: '40px', height: '40px', borderRadius: '50%', border: 'none', background: 'var(--color-white)', color: 'var(--color-primary)', fontSize: '1.2rem', boxShadow: 'var(--shadow-md)', cursor: 'pointer', border: '2px solid var(--color-primary)' }}>➖</button>
       <button onClick={() => resetTransform()} style={{ width: '40px', height: '40px', borderRadius: '50%', border: 'none', background: 'var(--color-text-main)', color: 'white', fontSize: '1.2rem', boxShadow: 'var(--shadow-md)', cursor: 'pointer' }}>🔄</button>
@@ -91,6 +91,31 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
     };
     loadData();
   }, []);
+
+  // Initial Focus Logic
+  useEffect(() => {
+    if (isDBLoaded) {
+      if (isGuest) {
+        // Guest: Focus on the very first member (Ancestor)
+        if (treeData[0]?.members[0]) {
+          setFocusedMemberId(treeData[0].members[0].id);
+        }
+      } else if (currentUser) {
+        // Admin/Editor: Focus on their own generation match
+        const myGenMember = allMembers.find(m => {
+          const mName = m.name.toLowerCase().replace(/[^a-z]/g, '');
+          const uName = currentUser.username.toLowerCase().replace(/[^a-z]/g, '');
+          const trackKey = uName.substring(0, 4);
+          return trackKey.length >= 3 && (mName.includes(trackKey) || uName.includes(mName.substring(0, 4)));
+        });
+        if (myGenMember) {
+          setFocusedMemberId(myGenMember.id);
+        } else if (treeData[0]?.members[0]) {
+          setFocusedMemberId(treeData[0].members[0].id);
+        }
+      }
+    }
+  }, [isDBLoaded, isGuest, currentUser]);
 
   const openAddModal = () => {
     setEditingMember(null);
@@ -511,15 +536,20 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
           </svg>
           Cetak Silsilah (JPG)
         </button>
-        <button className="btn-secondary" onClick={handleShareLink} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'var(--color-white)', color: 'var(--color-primary)', borderColor: 'var(--color-primary)' }}>
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-            <polyline points="16 6 12 2 8 6"></polyline>
-            <line x1="12" y1="2" x2="12" y2="15"></line>
-          </svg>
-          Bagikan
-        </button>
       </div>
+      
+      {/* Mini Share Button - Top Fixed for accessibility */}
+      <button 
+        className="mini-share-btn" 
+        onClick={handleShareLink} 
+        title="Bagikan Silsilah"
+      >
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+          <polyline points="16 6 12 2 8 6"></polyline>
+          <line x1="12" y1="2" x2="12" y2="15"></line>
+        </svg>
+      </button>
       
 
 
