@@ -708,29 +708,23 @@ p {
   text-decoration: none;
 }
 
-.mini-share-btn {
-  position: fixed;
-  bottom: 1rem;
-  right: 4.5rem; /* Next to zoom controls */
-  width: 40px;
+.connector-line {
+  width: 2px;
   height: 40px;
-  border-radius: 50%;
-  background: white;
-  color: var(--color-primary);
-  border: 2px solid var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: var(--shadow-md);
-  z-index: 10;
-  transition: all 0.2s ease;
+  background-color: var(--color-border);
+  transition: all 0.3s ease;
 }
 
-.mini-share-btn:hover {
-  background: var(--color-primary);
-  color: white;
-  transform: translateY(-2px);
+.connector-line.active {
+  background-color: var(--color-primary);
+  width: 4px;
+  box-shadow: 0 0 10px rgba(217, 119, 87, 0.4);
+}
+
+.member-card.related-match {
+  border-color: rgba(217, 119, 87, 0.5) !important;
+  background-color: rgba(217, 119, 87, 0.05);
+  box-shadow: 0 0 15px rgba(217, 119, 87, 0.2);
 }
 
 @media (max-width: 768px) {
@@ -739,11 +733,6 @@ p {
     justify-content: center;
     bottom: 10px;
     width: calc(100% - 30px);
-  }
-  
-  .mini-share-btn {
-    bottom: 4.5rem; /* Stack above zoom on mobile if needed, or keep next to it */
-    right: 1rem;
   }
   
   .zoom-controls-container {
