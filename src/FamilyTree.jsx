@@ -7,13 +7,93 @@ import { addLog } from './logger';
 
 // Komponen kontrol zoom untuk alternatif tambahan yang rapi
 const ZoomControls = () => {
-  const { zoomIn, zoomOut, resetTransform } = useControls();
+  const { zoomIn, zoomOut, resetTransform, centerView } = useControls();
+  
+  const handleDefaultView = () => {
+    resetTransform(500); // Durasi 500ms
+    setTimeout(() => centerView(1, 500), 10);
+  };
+
   return (
     <div className="zoom-controls-container" style={{ position: 'absolute', bottom: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 10 }}>
       <button onClick={() => zoomIn(0.2)} title="Perbesar" style={{ width: '40px', height: '40px', borderRadius: '50%', border: 'none', background: 'var(--color-primary)', color: 'white', fontSize: '1.2rem', boxShadow: 'var(--shadow-md)', cursor: 'pointer' }}>➕</button>
       <button onClick={() => zoomOut(0.2)} title="Perkecil" style={{ width: '40px', height: '40px', borderRadius: '50%', border: 'none', background: 'var(--color-white)', color: 'var(--color-primary)', fontSize: '1.2rem', boxShadow: 'var(--shadow-md)', cursor: 'pointer', border: '2px solid var(--color-primary)' }}>➖</button>
-      <button onClick={() => resetTransform()} title="Tampilan Default" style={{ width: '40px', height: '40px', borderRadius: '50%', border: 'none', background: 'var(--color-text-main)', color: 'white', fontSize: '1.2rem', boxShadow: 'var(--shadow-md)', cursor: 'pointer' }}>🔄</button>
+      <button onClick={handleDefaultView} title="Tampilan Default" style={{ width: '40px', height: '40px', borderRadius: '50%', border: 'none', background: 'var(--color-text-main)', color: 'white', fontSize: '1.2rem', boxShadow: 'var(--shadow-md)', cursor: 'pointer' }}>🔄</button>
     </div>
+  );
+};
+
+// Komponen Cerdas Penghubung Garis Keturunan
+const FamilyLines = ({ treeData, focusedMemberId }) => {
+  const [lines, setLines] = useState([]);
+
+  useEffect(() => {
+    const updateLines = () => {
+      const newLines = [];
+      const flatMembers = treeData.flatMap(gen => gen.members);
+      
+      flatMembers.forEach(member => {
+        if (member.referenceMemberId && member.relation === 'Anak') {
+          const parentEl = document.getElementById(`member-${member.referenceMemberId}`);
+          const childEl = document.getElementById(`member-${member.id}`);
+          const wrapperEl = document.getElementById('family-tree-wrapper');
+
+          if (parentEl && childEl && wrapperEl) {
+            const pRect = parentEl.getBoundingClientRect();
+            const cRect = childEl.getBoundingClientRect();
+            const wRect = wrapperEl.getBoundingClientRect();
+
+            // Koordinat relatif terhadap wrapper
+            const x1 = (pRect.left + pRect.width / 2) - wRect.left;
+            const y1 = (pRect.bottom) - wRect.top;
+            const x2 = (cRect.left + cRect.width / 2) - wRect.left;
+            const y2 = (cRect.top) - wRect.top;
+
+            const isFocused = focusedMemberId === member.id || focusedMemberId === Number(member.referenceMemberId);
+
+            newLines.push({ x1, y1, x2, y2, isFocused });
+          }
+        }
+      });
+      setLines(newLines);
+    };
+
+    updateLines();
+    window.addEventListener('resize', updateLines);
+    // Observe changes in the wrapper to update lines when children change
+    const observer = new MutationObserver(updateLines);
+    const wrapper = document.getElementById('family-tree-wrapper');
+    if (wrapper) observer.observe(wrapper, { childList: true, subtree: true });
+
+    return () => {
+      window.removeEventListener('resize', updateLines);
+      observer.disconnect();
+    };
+  }, [treeData, focusedMemberId]);
+
+  return (
+    <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 }}>
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-border)" />
+        </marker>
+        <marker id="arrowhead-active" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-primary)" />
+        </marker>
+      </defs>
+      {lines.map((line, i) => (
+        <path
+          key={i}
+          d={`M ${line.x1} ${line.y1} L ${line.x1} ${line.y1 + 15} L ${line.x2} ${line.y1 + 15} L ${line.x2} ${line.y2}`}
+          fill="none"
+          stroke={line.isFocused ? 'var(--color-primary)' : 'var(--color-border)'}
+          strokeWidth={line.isFocused ? 3 : 1.5}
+          strokeDasharray={line.isFocused ? 'none' : '4 2'}
+          style={{ transition: 'all 0.3s ease' }}
+          markerEnd={line.isFocused ? 'url(#arrowhead-active)' : 'url(#arrowhead)'}
+        />
+      ))}
+    </svg>
   );
 };
 
@@ -385,7 +465,8 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
             <React.Fragment>
               <ZoomControls />
               <TransformComponent wrapperStyle={{ width: "100vw", height: "100vh" }} contentStyle={{ width: "100%", minWidth: "max-content", padding: "1rem" }}>
-                <div id="family-tree-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div id="family-tree-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+                  <FamilyLines treeData={visibleTreeData} focusedMemberId={focusedMemberId} />
                   {visibleTreeData.map((gen, index) => {
                     // Logika Pencocokan Ekstrem: Mencari nama pengguna di dalam data anggota
                     const isUserGeneration = currentUser && gen.members.some(m => {
@@ -454,6 +535,7 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
                                     member.referenceMemberId === focusedMemberId.toString()
                                   ) ? 'related-match' : ''
                                 }`}
+                                id={`member-${member.id}`}
                                 onClick={() => setFocusedMemberId(member.id)}
                                 style={{ 
                                   cursor: 'pointer', 
@@ -502,8 +584,9 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
                           });
                         })()}
                       </div>
+                      {/* Konektor CSS Lama dihapus karena digantikan SVG Cerdas */}
                       {index < visibleTreeData.length - 1 && (
-                        <div className={`connector-line ${focusedMemberId && visibleTreeData[index].members.some(m => m.id === focusedMemberId || m.referenceMemberId === focusedMemberId.toString()) ? 'active' : ''}`} style={{ margin: '0.5rem auto' }}></div>
+                        <div style={{ height: '30px' }}></div>
                       )}
                     </div>
                   );
