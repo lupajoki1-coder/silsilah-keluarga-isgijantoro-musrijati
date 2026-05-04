@@ -101,6 +101,20 @@ function App() {
     addLog('warn', 'Manajemen Akses', `Menghapus akun: ${username}`);
   };
 
+  const handleShareLink = () => {
+    const shareData = {
+      title: 'Silsilah Keluarga Isgijantoro',
+      text: 'Mari melihat silsilah keluarga Isgijantoro secara interaktif.',
+      url: window.location.href
+    };
+    if (navigator.share) {
+      navigator.share(shareData).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Tautan silsilah telah disalin ke papan klip!');
+    }
+  };
+
   return (
     <div className="app-container" style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       {/* Floating Top Left: Identitas Silsilah (Sangat Ringkas) */}
@@ -111,6 +125,17 @@ function App() {
 
       {/* Floating Top Right: Kontrol Pengurus */}
       <div style={{ position: 'fixed', top: '15px', right: '15px', zIndex: 50, display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--glass-bg)', padding: '0.4rem', borderRadius: 'var(--radius-full)', boxShadow: 'var(--shadow-md)', backdropFilter: 'blur(12px)', border: '1px solid var(--glass-border)' }}>
+        <button 
+          onClick={handleShareLink} 
+          title="Bagikan Silsilah" 
+          style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: 'white', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-sm)' }}
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+            <polyline points="16 6 12 2 8 6"></polyline>
+            <line x1="12" y1="2" x2="12" y2="15"></line>
+          </svg>
+        </button>
         {currentUser ? (
           <React.Fragment>
             <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0 0.5rem', color: 'var(--color-text-main)', display: 'none' }} className="hide-on-mobile">
@@ -118,14 +143,14 @@ function App() {
             </span>
             {(userRole === 'super-admin' || userRole === 'admin') && (
               <button onClick={() => setShowAccessModal(true)} style={{ fontSize: '0.7rem', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-full)', cursor: 'pointer', background: 'var(--color-primary)', color: 'white', border: 'none', fontWeight: 'bold' }}>
-                Kelola Akses
+                Akses
               </button>
             )}
             <button onClick={handleLogout} className="btn-secondary" style={{ fontSize: '0.7rem', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-full)', border: 'none', background: '#F3F4F6' }}>Logout</button>
           </React.Fragment>
         ) : (
           <button onClick={() => setShowLoginModal(true)} className="btn-primary" style={{ fontSize: '0.8rem', padding: '0.4rem 1rem', borderRadius: 'var(--radius-full)', background: 'var(--color-primary)' }}>
-            🔒 Login Pengurus
+            🔒 Login
           </button>
         )}
       </div>
