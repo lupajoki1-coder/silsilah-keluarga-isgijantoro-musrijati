@@ -665,30 +665,45 @@ p {
   pointer-events: none;
 }
 
-/* --- RESPONSIVE TOOLTIP --- */
+/* --- RESPONSIVE TOOLTIP & MOBILE PANEL --- */
+.hide-on-mobile {
+  display: block;
+}
+
+.show-on-mobile-flex {
+  display: none;
+}
+
 @media (max-width: 768px) {
-  .member-note-tooltip {
-    position: fixed !important;
-    top: auto !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    transform: none !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 20px 20px 0 0 !important;
-    padding: 1.5rem !important;
-    background: white !important;
-    color: var(--color-text-main) !important;
-    box-shadow: 0 -10px 25px rgba(0,0,0,0.1) !important;
-    z-index: 1000 !important;
-    border-top: 4px solid var(--color-primary) !important;
-    text-align: left !important;
-    margin-top: 0 !important;
+  .hide-on-mobile {
+    display: none !important;
   }
   
-  .member-note-tooltip .arrow {
-    display: none !important;
+  .show-on-mobile-flex {
+    display: flex !important;
+  }
+
+  .mobile-note-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.15);
+    z-index: 1000;
+    flex-direction: column;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border-top: 5px solid var(--color-primary);
+  }
+
+  .drag-handle {
+    width: 40px;
+    height: 5px;
+    background: #E5E7EB;
+    border-radius: var(--radius-full);
+    margin: 0 auto 1rem auto;
   }
 }
 
@@ -736,8 +751,10 @@ p {
   }
   
   .zoom-controls-container {
-    bottom: 1rem !important;
-    right: 1rem !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    top: auto !important;
   }
 }
 
