@@ -15,25 +15,28 @@ const FamilyLines = ({ treeData, focusedMemberId }) => {
     const updateLines = () => {
       const newLines = [];
       const flatMembers = treeData.flatMap(gen => gen.members);
+      const wrapperEl = document.getElementById('family-tree-wrapper');
       
+      if (!wrapperEl) return;
+      const wRect = wrapperEl.getBoundingClientRect();
+
       flatMembers.forEach(member => {
+        // Logika Ketat: Hanya garis 'Anak' ke 'Orang Tua' yang digambar
         if (member.referenceMemberId && member.relation === 'Anak') {
           const parentEl = document.getElementById(`member-${member.referenceMemberId}`);
           const childEl = document.getElementById(`member-${member.id}`);
-          const wrapperEl = document.getElementById('family-tree-wrapper');
 
-          if (parentEl && childEl && wrapperEl) {
+          if (parentEl && childEl) {
             const pRect = parentEl.getBoundingClientRect();
             const cRect = childEl.getBoundingClientRect();
-            const wRect = wrapperEl.getBoundingClientRect();
 
-            // Koordinat relatif terhadap wrapper
+            // Koordinat relatif terhadap wrapper (pusat kartu)
             const x1 = (pRect.left + pRect.width / 2) - wRect.left;
             const y1 = (pRect.bottom) - wRect.top;
             const x2 = (cRect.left + cRect.width / 2) - wRect.left;
             const y2 = (cRect.top) - wRect.top;
 
-            const isFocused = focusedMemberId === member.id || focusedMemberId === Number(member.referenceMemberId);
+            const isFocused = focusedMemberId === member.id || focusedMemberId.toString() === member.referenceMemberId.toString();
 
             newLines.push({ x1, y1, x2, y2, isFocused });
           }
@@ -42,14 +45,16 @@ const FamilyLines = ({ treeData, focusedMemberId }) => {
       setLines(newLines);
     };
 
-    updateLines();
+    // Delay sedikit agar DOM selesai render (Penting untuk akurasi koordinat)
+    const timer = setTimeout(updateLines, 100);
+    
     window.addEventListener('resize', updateLines);
-    // Observe changes in the wrapper to update lines when children change
     const observer = new MutationObserver(updateLines);
     const wrapper = document.getElementById('family-tree-wrapper');
     if (wrapper) observer.observe(wrapper, { childList: true, subtree: true });
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('resize', updateLines);
       observer.disconnect();
     };
@@ -57,24 +62,15 @@ const FamilyLines = ({ treeData, focusedMemberId }) => {
 
   return (
     <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 }}>
-      <defs>
-        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-border)" />
-        </marker>
-        <marker id="arrowhead-active" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-primary)" />
-        </marker>
-      </defs>
       {lines.map((line, i) => (
         <path
           key={i}
           d={`M ${line.x1} ${line.y1} L ${line.x1} ${line.y1 + 15} L ${line.x2} ${line.y1 + 15} L ${line.x2} ${line.y2}`}
           fill="none"
           stroke={line.isFocused ? 'var(--color-primary)' : 'var(--color-border)'}
-          strokeWidth={line.isFocused ? 3 : 1.5}
-          strokeDasharray={line.isFocused ? 'none' : '4 2'}
-          style={{ transition: 'all 0.3s ease' }}
-          markerEnd={line.isFocused ? 'url(#arrowhead-active)' : 'url(#arrowhead)'}
+          strokeWidth={line.isFocused ? 2.5 : 1.5}
+          strokeDasharray="5 3"
+          style={{ transition: 'all 0.3s ease', opacity: 0.8 }}
         />
       ))}
     </svg>
