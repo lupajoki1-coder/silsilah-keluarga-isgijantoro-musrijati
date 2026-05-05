@@ -5,23 +5,7 @@ import { validateFamilyAddition } from './gemini';
 import { TransformWrapper, TransformComponent, useControls } from "react-zoom-pan-pinch";
 import { addLog } from './logger';
 
-// Komponen kontrol zoom untuk alternatif tambahan yang rapi
-const ZoomControls = () => {
-  const { zoomIn, zoomOut, resetTransform, centerView } = useControls();
-  
-  const handleDefaultView = () => {
-    resetTransform(500); // Durasi 500ms
-    setTimeout(() => centerView(1, 500), 10);
-  };
 
-  return (
-    <div className="zoom-controls-container" style={{ position: 'absolute', bottom: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 10 }}>
-      <button onClick={() => zoomIn(0.2)} title="Perbesar" style={{ width: '40px', height: '40px', borderRadius: '50%', border: 'none', background: 'var(--color-primary)', color: 'white', fontSize: '1.2rem', boxShadow: 'var(--shadow-md)', cursor: 'pointer' }}>➕</button>
-      <button onClick={() => zoomOut(0.2)} title="Perkecil" style={{ width: '40px', height: '40px', borderRadius: '50%', border: 'none', background: 'var(--color-white)', color: 'var(--color-primary)', fontSize: '1.2rem', boxShadow: 'var(--shadow-md)', cursor: 'pointer', border: '2px solid var(--color-primary)' }}>➖</button>
-      <button onClick={handleDefaultView} title="Tampilan Default" style={{ width: '40px', height: '40px', borderRadius: '50%', border: 'none', background: 'var(--color-text-main)', color: 'white', fontSize: '1.2rem', boxShadow: 'var(--shadow-md)', cursor: 'pointer' }}>🔄</button>
-    </div>
-  );
-};
 
 // Komponen Cerdas Penghubung Garis Keturunan
 const FamilyLines = ({ treeData, focusedMemberId }) => {
@@ -461,9 +445,24 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
           panning={{ velocityDisabled: true }} 
           doubleClick={{ disabled: true }}
         >
-          {() => (
+          {(controls) => (
             <React.Fragment>
-              <ZoomControls />
+              {/* Zoom Controls moved to be fixed relative to container */}
+              <div className="zoom-controls-container" style={{ position: 'fixed', bottom: '20px', right: '20px', display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 100 }}>
+                <button onClick={() => controls.zoomIn(0.2)} title="Perbesar" style={{ width: '45px', height: '45px', borderRadius: '50%', border: 'none', background: 'var(--color-primary)', color: 'white', fontSize: '1.4rem', boxShadow: 'var(--shadow-lg)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>➕</button>
+                <button onClick={() => controls.zoomOut(0.2)} title="Perkecil" style={{ width: '45px', height: '45px', borderRadius: '50%', border: 'none', background: 'var(--color-white)', color: 'var(--color-primary)', fontSize: '1.4rem', boxShadow: 'var(--shadow-lg)', cursor: 'pointer', border: '2px solid var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>➖</button>
+                <button 
+                  onClick={() => {
+                    controls.resetTransform(500);
+                    setTimeout(() => controls.centerView(1, 500), 10);
+                  }} 
+                  title="Tampilan Default" 
+                  style={{ width: '45px', height: '45px', borderRadius: '50%', border: 'none', background: 'var(--color-text-main)', color: 'white', fontSize: '1.4rem', boxShadow: 'var(--shadow-lg)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  🔄
+                </button>
+              </div>
+
               <TransformComponent wrapperStyle={{ width: "100vw", height: "100vh" }} contentStyle={{ width: "100%", minWidth: "max-content", padding: "1rem" }}>
                 <div id="family-tree-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
                   <FamilyLines treeData={visibleTreeData} focusedMemberId={focusedMemberId} />
@@ -545,13 +544,14 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
                                 }}
                                 title="Klik untuk melihat garis keturunan"
                               >
-                                {member.note && (
-                                  <div className="member-note-tooltip">
-                                    <div style={{ fontWeight: 'bold', marginBottom: '2px', color: 'var(--color-primary)' }}>Catatan:</div>
-                                    {member.note}
-                                    <div className="arrow" style={{ position: 'absolute', top: '-4px', left: '50%', transform: 'translateX(-50%)', width: '0', height: '0', borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '5px solid rgba(0,0,0,0.85)' }}></div>
-                                  </div>
-                                )}
+                                  {/* Catatan Tooltip (Hanya Desktop) */}
+                                  {member.note && (
+                                    <div className="member-note-tooltip hide-on-mobile">
+                                      <div style={{ fontWeight: 'bold', marginBottom: '2px', color: 'var(--color-primary)' }}>Catatan:</div>
+                                      {member.note}
+                                      <div className="arrow" style={{ position: 'absolute', top: '-4px', left: '50%', transform: 'translateX(-50%)', width: '0', height: '0', borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '5px solid rgba(0,0,0,0.85)' }}></div>
+                                    </div>
+                                  )}
                                 <div 
                                   className={`member-avatar ${member.status === "Meninggal" ? "grayscale" : ""}`}
                                   style={{ backgroundImage: `url(${member.avatarUrl})` }}
@@ -774,6 +774,19 @@ export default function FamilyTree({ role = 'guest', currentUser }) {
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {/* Panel Catatan Mobile (Bottom Sheet) */}
+      {focusedMemberId && allMembers.find(m => m.id === focusedMemberId)?.note && (
+        <div className="mobile-note-panel show-on-mobile-flex">
+          <div className="drag-handle"></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+            <h4 style={{ margin: 0, color: 'var(--color-primary)' }}>📝 Catatan Keluarga</h4>
+            <button onClick={() => setFocusedMemberId(null)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#999' }}>&times;</button>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-text-main)', lineHeight: 1.5 }}>
+            {allMembers.find(m => m.id === focusedMemberId).note}
+          </p>
         </div>
       )}
     </div>
